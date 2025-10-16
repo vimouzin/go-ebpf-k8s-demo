@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-slog-gin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hello-slog-gin
+  template:
+    metadata:
+      labels:
+        app: hello-slog-gin
+    spec:
+      shareProcessNamespace: true
+      serviceAccountName: obi
+      containers:
+        - name: hello-slog-gin
+          image: vimouzin12/hello-slog-gin:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+        - name: obi
+          image: otel/autoinstrumentation-go
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          env:
+            - name: OTEL_SERVICE_NAME
+              value: "example-go-app"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "grpc"
+            - name: OTEL_GO_AUTO_TARGET_EXE
+              value: "/app/server" 
+            - name: OTEL_EBPF_OPEN_PORT
+              value: '8443'
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: 'https://ingress.us-west-2.aws.dash0.com:4317'
+            - name: OTEL_EBPF_KUBE_METADATA_ENABLE
+              value: 'true'
+            - name: OTEL_EXPORTER_OTLP_HEADERS
+              value: 'add your auth key here'
+
+
